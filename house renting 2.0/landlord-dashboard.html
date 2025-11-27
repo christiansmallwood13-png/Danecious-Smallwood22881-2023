@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landlord Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="page">
+        <div class="top-bar">
+            <div class="nav-container">
+                <span id="welcomeText">Welcome, Landlord</span>
+                <button onclick="logout()" class="logout-btn">Logout</button>
+            </div>
+        </div>
+
+        <div class="dashboard-container">
+            <div class="dashboard-tabs">
+                <button class="tab-btn active" onclick="showTab('dashboard')">Dashboard</button>
+                <button class="tab-btn" onclick="showTab('properties')">My Properties</button>
+                <button class="tab-btn" onclick="showTab('bookings')">Booking Requests</button>
+            </div>
+            
+            <!-- Dashboard Summary Tab -->
+            <div id="dashboardTab" class="tab-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Properties</h3>
+                        <div class="stat-number" id="totalProperties">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Rented Properties</h3>
+                        <div class="stat-number" id="rentedProperties">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Available Properties</h3>
+                        <div class="stat-number" id="availableProperties">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Tenants</h3>
+                        <div class="stat-number" id="totalTenants">0</div>
+                    </div>
+                </div>
+                
+                <div class="property-types-chart">
+                    <h3>Properties by Type</h3>
+                    <div id="propertyTypesBreakdown" class="types-breakdown"></div>
+                </div>
+            </div>
+            
+            <div id="propertiesTab" class="tab-content" style="display:none;">
+                <div class="dashboard-actions">
+                    <button onclick="showAddPropertyForm()" class="add-property-btn">+ Add New Property</button>
+                </div>
+                <div id="propertiesList" class="properties-list"></div>
+            </div>
+            
+            <div id="bookingsTab" class="tab-content" style="display:none;">
+                <div class="booking-filters">
+                    <select id="bookingStatusFilter" onchange="filterBookingRequests()">
+                        <option value="">All Requests</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div id="bookingRequestsList" class="booking-requests-list"></div>
+            </div>
+
+            <!-- Add Property Form -->
+            <div id="addPropertyForm" class="property-form" style="display:none;">
+                <h3 id="formTitle">Add New Property</h3>
+                <form id="propertyForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="title">Property Title:</label>
+                            <input type="text" id="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="type">Property Type:</label>
+                            <select id="type" required>
+                                <option value="house">House</option>
+                                <option value="apartment">Apartment</option>
+                                <option value="villa">Villa</option>
+                                <option value="studio">Studio</option>
+                                <option value="single-room">Single Room</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="price">Price (FRw):</label>
+                            <input type="number" id="price" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="availability">Availability:</label>
+                            <select id="availability" required>
+                                <option value="immediate">Available Now</option>
+                                <option value="coming soon">Coming Soon</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bedrooms">Bedrooms:</label>
+                            <select id="bedrooms" required>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5+">5+</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="bathrooms">Bathrooms:</label>
+                            <select id="bathrooms" required>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4+">4+</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="location">Location:</label>
+                            <input type="text" id="location" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="furnished">Furnished:</label>
+                            <select id="furnished" required>
+                                <option value="yes">Yes</option>
+                                <option value="no">No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="photos">Photo URLs (comma separated):</label>
+                            <input type="text" id="photos" placeholder="https://example.com/photo1.jpg, https://example.com/photo2.">
+                        </div>
+                        <div class="form-group">
+                            <label for="coordinates">Coordinates (lat,lng):</label>
+                            <input type="text" id="coordinates" placeholder="-1.9441,30.0619">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="amenities">Amenities (comma separated):</label>
+                        <input type="text" id="amenities" placeholder="WiFi, Parking, Garden, Security">
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description:</label>
+                        <textarea id="description" rows="3"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" onclick="hideAddPropertyForm()" class="cancel-btn">Cancel</button>
+                        <button type="submit" class="submit-btn" id="submitBtn">Add Property</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser || currentUser.type !== 'landlord') {
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('welcomeText').textContent = `Welcome, ${currentUser.firstName} ${currentUser.lastName}`;
+        let editingPropertyId = null;
+
+        function showAddPropertyForm() {
+            editingPropertyId = null;
+            document.getElementById('formTitle').textContent = 'Add New Property';
+            document.getElementById('submitBtn').textContent = 'Add Property';
+            document.getElementById('propertyForm').reset();
+            document.getElementById('addPropertyForm').style.display = 'block';
+        }
+
+        function hideAddPropertyForm() {
+            document.getElementById('addPropertyForm').style.display = 'none';
+            document.getElementById('propertyForm').reset();
+            editingPropertyId = null;
+        }
+
+        function editProperty(id) {
+            const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+            const property = properties.find(p => p.id === id && p.landlordId === currentUser.id);
+            
+            if (property) {
+                editingPropertyId = id;
+                document.getElementById('formTitle').textContent = 'Edit Property';
+                document.getElementById('submitBtn').textContent = 'Update Property';
+                
+                document.getElementById('title').value = property.title;
+                document.getElementById('type').value = property.type || 'house';
+                document.getElementById('price').value = property.price;
+                document.getElementById('availability').value = property.availability || 'immediate';
+                document.getElementById('bedrooms').value = property.bedrooms;
+                document.getElementById('bathrooms').value = property.bathrooms;
+                document.getElementById('location').value = property.location;
+                document.getElementById('furnished').value = property.furnished;
+                document.getElementById('photos').value = property.photos ? property.photos.join(', ') : '';
+                document.getElementById('coordinates').value = property.coordinates || '';
+                document.getElementById('amenities').value = property.amenities ? property.amenities.join(', ') : '';
+                document.getElementById('description').value = property.description || '';
+                
+                document.getElementById('addPropertyForm').style.display = 'block';
+            }
+        }
+
+        function updatePropertyStatus(id, status) {
+            const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+            const propertyIndex = properties.findIndex(p => p.id === id && p.landlordId === currentUser.id);
+            
+            if (propertyIndex !== -1) {
+                properties[propertyIndex].available = status === 'available';
+                localStorage.setItem('properties', JSON.stringify(properties));
+                loadDashboardStats();
+                loadProperties();
+            }
+        }
+
+        document.getElementById('propertyForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const propertyData = {
+                title: document.getElementById('title').value,
+                type: document.getElementById('type').value,
+                price: parseInt(document.getElementById('price').value),
+                availability: document.getElementById('availability').value,
+                bedrooms: document.getElementById('bedrooms').value,
+                bathrooms: document.getElementById('bathrooms').value,
+                location: document.getElementById('location').value,
+                furnished: document.getElementById('furnished').value,
+                photos: document.getElementById('photos').value.split(',').map(p => p.trim()).filter(p => p),
+                coordinates: document.getElementById('coordinates').value,
+                amenities: document.getElementById('amenities').value.split(',').map(a => a.trim()).filter(a => a),
+                description: document.getElementById('description').value,
+                landlordPhone: currentUser.phone || '+250788123456'
+            };
+            
+            const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+            
+            if (editingPropertyId) {
+                const propertyIndex = properties.findIndex(p => p.id === editingPropertyId && p.landlordId === currentUser.id);
+                if (propertyIndex !== -1) {
+                    properties[propertyIndex] = { ...properties[propertyIndex], ...propertyData };
+                    localStorage.setItem('properties', JSON.stringify(properties));
+                    alert('Property updated successfully!');
+                }
+            } else {
+                const property = {
+                    id: Date.now(),
+                    landlordId: currentUser.id,
+                    ...propertyData,
+                    available: true,
+                    dateAdded: new Date().toISOString()
+                };
+                properties.push(property);
+                localStorage.setItem('properties', JSON.stringify(properties));
+                alert('Property added successfully!');
+            }
+            
+            hideAddPropertyForm();
+            loadProperties();
+            loadDashboardStats();
+        });
+
+        function loadProperties() {
+            const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+            const myProperties = properties.filter(p => p.landlordId === currentUser.id);
+            
+            const container = document.getElementById('propertiesList');
+            container.innerHTML = myProperties.map(property => `
+                <div class="property-item">
+                    <div class="property-header">
+                        <h3>${property.title}</h3>
+                        <select class="property-status-select" onchange="updatePropertyStatus(${property.id}, this.value)">
+                            <option value="available" ${property.available ? 'selected' : ''}>Available</option>
+                            <option value="rented" ${!property.available ? 'selected' : ''}>Rented</option>
+                        </select>
+                    </div>
+                    <p><strong>Type:</strong> ${property.type || 'House'}</p>
+                    <p><strong>Price:</strong> ${property.price.toLocaleString()} FRw/month</p>
+                    <p><strong>Location:</strong> ${property.location}</p>
+                    <p><strong>Bedrooms:</strong> ${property.bedrooms} | <strong>Bathrooms:</strong> ${property.bathrooms}</p>
+                    <p><strong>Furnished:</strong> ${property.furnished === 'yes' ? 'Yes' : 'No'}</p>
+                    <p><strong>Availability:</strong> ${property.availability || 'Immediate'}</p>
+                    ${property.amenities ? `<p><strong>Amenities:</strong> ${property.amenities.join(', ')}</p>` : ''}
+                    <div class="property-actions">
+                        <button onclick="editProperty(${property.id})" class="edit-btn">Edit</button>
+                        <button onclick="deleteProperty(${property.id})" class="delete-btn">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteProperty(id) {
+            if (confirm('Are you sure you want to delete this property?')) {
+                const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+                const updated = properties.filter(p => !(p.id === id && p.landlordId === currentUser.id));
+                localStorage.setItem('properties', JSON.stringify(updated));
+                loadProperties();
+                loadDashboardStats();
+            }
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(tabName + 'Tab').style.display = 'block';
+            event.target.classList.add('active');
+            
+            if (tabName === 'bookings') {
+                loadBookingRequests();
+            } else if (tabName === 'dashboard') {
+                loadDashboardStats();
+            }
+        }
+
+        function loadDashboardStats() {
+            const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+            const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+            
+            const myProperties = properties.filter(p => p.landlordId === currentUser.id);
+            const myPropertyIds = myProperties.map(p => p.id);
+            const approvedBookings = bookings.filter(b => myPropertyIds.includes(b.propertyId) && b.status === 'approved');
+            
+            // Calculate stats
+            const totalProperties = myProperties.length;
+            const rentedProperties = myProperties.filter(p => !p.available).length;
+            const availableProperties = myProperties.filter(p => p.available).length;
+            const uniqueTenants = [...new Set(approvedBookings.map(b => b.tenantId))].length;
+            
+            // Update stat cards
+            document.getElementById('totalProperties').textContent = totalProperties;
+            document.getElementById('rentedProperties').textContent = rentedProperties;
+            document.getElementById('availableProperties').textContent = availableProperties;
+            document.getElementById('totalTenants').textContent = uniqueTenants;
+            
+            // Property types breakdown
+            const typeBreakdown = {};
+            myProperties.forEach(p => {
+                const type = p.type || 'house';
+                typeBreakdown[type] = (typeBreakdown[type] || 0) + 1;
+            });
+            
+            const typesContainer = document.getElementById('propertyTypesBreakdown');
+            typesContainer.innerHTML = Object.entries(typeBreakdown).map(([type, count]) => `
+                <div class="type-item">
+                    <span class="type-name">${type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                    <span class="type-count">${count}</span>
+                </div>
+            `).join('');
+        }
+
+        function loadBookingRequests() {
+            const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+            const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            
+            const myProperties = properties.filter(p => p.landlordId === currentUser.id);
+            const myPropertyIds = myProperties.map(p => p.id);
+            const myBookings = bookings.filter(b => myPropertyIds.includes(b.propertyId));
+            
+            displayBookingRequests(myBookings, properties, users);
+        }
+
+        function displayBookingRequests(bookings, properties, users) {
+            const container = document.getElementById('bookingRequestsList');
+            
+            if (bookings.length === 0) {
+                container.innerHTML = '<p class="no-bookings">No booking requests found.</p>';
+                return;
+            }
+            
+            container.innerHTML = bookings.map(booking => {
+                const property = properties.find(p => p.id === booking.propertyId);
+                const tenant = users.find(u => u.id === booking.tenantId);
+                
+                return `
+                    <div class="booking-request-item">
+                        <div class="booking-header">
+                            <h3>${property ? property.title : 'Property Not Found'}</h3>
+                            <span class="booking-status ${booking.status}">${booking.status.toUpperCase()}</span>
+                        </div>
+                        <div class="booking-info">
+                            <div class="tenant-info">
+                                <h4>Tenant Details:</h4>
+                                <p><strong>Name:</strong> ${tenant ? `${tenant.firstName} ${tenant.lastName}` : 'Unknown'}</p>
+                                <p><strong>Email:</strong> ${tenant ? tenant.email : 'Unknown'}</p>
+                            </div>
+                            <div class="booking-details">
+                                <p><strong>Move-in Date:</strong> ${new Date(booking.moveInDate).toLocaleDateString()}</p>
+                                <p><strong>Duration:</strong> ${booking.duration} months</p>
+                                <p><strong>Request Date:</strong> ${new Date(booking.dateBooked).toLocaleDateString()}</p>
+                                ${booking.message ? `<p><strong>Message:</strong> ${booking.message}</p>` : ''}
+                            </div>
+                        </div>
+                        ${booking.status === 'pending' ? `
+                            <div class="booking-actions">
+                                <button onclick="updateBookingStatus(${booking.id}, 'approved')" class="approve-btn">Approve</button>
+                                <button onclick="updateBookingStatus(${booking.id}, 'rejected')" class="reject-btn">Reject</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterBookingRequests() {
+            const statusFilter = document.getElementById('bookingStatusFilter').value;
+            const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+            const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            
+            const myProperties = properties.filter(p => p.landlordId === currentUser.id);
+            const myPropertyIds = myProperties.map(p => p.id);
+            let myBookings = bookings.filter(b => myPropertyIds.includes(b.propertyId));
+            
+            if (statusFilter) {
+                myBookings = myBookings.filter(b => b.status === statusFilter);
+            }
+            
+            displayBookingRequests(myBookings, properties, users);
+        }
+
+        function updateBookingStatus(bookingId, status) {
+            const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+            const bookingIndex = bookings.findIndex(b => b.id === bookingId);
+            
+            if (bookingIndex !== -1) {
+                const booking = bookings[bookingIndex];
+                bookings[bookingIndex].status = status;
+                localStorage.setItem('bookings', JSON.stringify(bookings));
+                
+                // Get property details for notification
+                const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+                const property = properties.find(p => p.id === booking.propertyId);
+                
+                // Create notification for tenant
+                const notificationMessage = status === 'approved' 
+                    ? `🎉 Great news! Your booking request for "${property ? property.title : 'Property'}" has been APPROVED by the landlord.`
+                    : `❌ Your booking request for "${property ? property.title : 'Property'}" has been REJECTED by the landlord.`;
+                
+                createNotification(booking.tenantId, notificationMessage, status === 'approved' ? 'success' : 'error');
+                
+                if (status === 'approved') {
+                    const propertyIndex = properties.findIndex(p => p.id === booking.propertyId);
+                    if (propertyIndex !== -1) {
+                        properties[propertyIndex].available = false;
+                        localStorage.setItem('properties', JSON.stringify(properties));
+                    }
+                }
+                
+                loadBookingRequests();
+                loadDashboardStats();
+                alert(`Booking ${status} successfully! Tenant has been notified.`);
+            }
+        }
+
+        function createNotification(userId, message, type = 'info') {
+            const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+            const notification = {
+                id: Date.now(),
+                userId: userId,
+                message: message,
+                type: type,
+                read: false,
+                timestamp: new Date().toISOString()
+            };
+            
+            notifications.push(notification);
+            localStorage.setItem('notifications', JSON.stringify(notifications));
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        }
+
+        loadProperties();
+        loadDashboardStats();
+    </script>
+</body>
+</html>

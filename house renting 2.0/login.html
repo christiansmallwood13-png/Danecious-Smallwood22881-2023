@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Void</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-form">
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="userType">Login as:</label>
+                    <select id="userType" required>
+                        <option value="tenant">Tenant</option>
+                        <option value="landlord">Landlord</option>
+                    </select>
+                </div>
+                <button type="submit" class="auth-btn">Login</button>
+            </form>
+            <p>Don't have an account? <a href="register.html">Register here</a></p>
+            <p><a href="forgot-password.html">Forgot Password?</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const userType = document.getElementById('userType').value;
+            
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const user = users.find(u => u.email === email && u.password === password && u.type === userType);
+            
+            if (user) {
+                if (!user.verified) {
+                    alert('Please verify your email first.');
+                    window.location.href = 'verify-email.html';
+                    return;
+                }
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                window.location.href = userType === 'landlord' ? 'landlord-dashboard.html' : 'index.html';
+            } else {
+                alert('Invalid credentials');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Filters - House Renting</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="page">
+        <!-- Top Bar -->
+        <div class="top-bar"></div>
+
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <span>🏠 <a href="index.html">Home</a></span> / 
+            <span>Filters</span>
+        </div>
+
+        <!-- Filter Page Content -->
+        <div class="filter-page-container">
+            <h1>Property Filters</h1>
+            
+            <form id="advancedFilterForm" class="advanced-filter-form">
+                <div class="filter-sections">
+                    <!-- Price Section -->
+                    <div class="filter-section">
+                        <h3>💰 Price Range</h3>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="priceMin">Minimum Price (FRw)</label>
+                                <input type="number" id="priceMin" name="priceMin" placeholder="0">
+                            </div>
+                            <div class="filter-group">
+                                <label for="priceMax">Maximum Price (FRw)</label>
+                                <input type="number" id="priceMax" name="priceMax" placeholder="1,000,000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Property Type Section -->
+                    <div class="filter-section">
+                        <h3>🏠 Property Details</h3>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="saleRent">Sale or Rent</label>
+                                <select id="saleRent" name="saleRent">
+                                    <option value="">Any</option>
+                                    <option value="sale">Sale</option>
+                                    <option value="rent">Rent</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="propertyType">Property Type</label>
+                                <select id="propertyType" name="propertyType">
+                                    <option value="">Any</option>
+                                    <option value="house">House</option>
+                                    <option value="apartment">Apartment</option>
+                                    <option value="villa">Villa</option>
+                                    <option value="studio">Studio</option>
+                                    <option value="single-room">Single Room</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="bedrooms">Bedrooms</label>
+                                <select id="bedrooms" name="bedrooms">
+                                    <option value="">Any</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5+">5+</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="bathrooms">Bathrooms</label>
+                                <select id="bathrooms" name="bathrooms">
+                                    <option value="">Any</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4+">4+</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location Section -->
+                    <div class="filter-section">
+                        <h3>📍 Location</h3>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="city">City</label>
+                                <select id="city" name="city">
+                                    <option value="">Any City</option>
+                                    <option value="kigali">Kigali</option>
+                                    <option value="butare">Butare</option>
+                                    <option value="gisenyi">Gisenyi</option>
+                                    <option value="ruhengeri">Ruhengeri</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="district">District/Area</label>
+                                <input type="text" id="district" name="district" placeholder="e.g., Remera, Gasoro">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Condition & Features Section -->
+                    <div class="filter-section">
+                        <h3>🔧 Condition & Features</h3>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="condition">Property Condition</label>
+                                <select id="condition" name="condition">
+                                    <option value="">Any</option>
+                                    <option value="new">New</option>
+                                    <option value="excellent">Excellent</option>
+                                    <option value="good">Good</option>
+                                    <option value="renovated">Renovated</option>
+                                    <option value="needs-work">Needs Work</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="furnished">Furnished</label>
+                                <select id="furnished" name="furnished">
+                                    <option value="">Any</option>
+                                    <option value="yes">Fully Furnished</option>
+                                    <option value="partial">Partially Furnished</option>
+                                    <option value="no">Unfurnished</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="availability">Availability</label>
+                                <select id="availability" name="availability">
+                                    <option value="">Any</option>
+                                    <option value="immediate">Available Now</option>
+                                    <option value="coming soon">Coming Soon</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="filter-actions">
+                    <button type="button" class="clear-btn" onclick="clearFilters()">Clear All</button>
+                    <button type="submit" class="apply-btn">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Apply filters and redirect to main page
+        document.getElementById('advancedFilterForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Collect filter data
+            const formData = new FormData(this);
+            const filters = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (value.trim() !== '') {
+                    filters[key] = value;
+                }
+            }
+            
+            // Store filters in localStorage
+            localStorage.setItem('propertyFilters', JSON.stringify(filters));
+            
+            // Redirect to main page
+            window.location.href = 'index.html';
+        });
+
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('advancedFilterForm').reset();
+            localStorage.removeItem('propertyFilters');
+        }
+
+        // Load saved filters on page load
+        window.addEventListener('load', function() {
+            const savedFilters = localStorage.getItem('propertyFilters');
+            if (savedFilters) {
+                const filters = JSON.parse(savedFilters);
+                
+                for (let [key, value] of Object.entries(filters)) {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        element.value = value;
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

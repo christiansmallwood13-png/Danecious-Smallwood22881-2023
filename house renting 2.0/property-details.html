@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Details - Void</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+</head>
+<body>
+    <div class="page">
+        <div class="top-bar">
+            <div class="nav-container">
+                <a href="index.html" class="back-btn">← Back to Listings</a>
+                <span id="userInfo"></span>
+            </div>
+        </div>
+
+        <div class="property-details-container">
+            <div id="propertyDetails"></div>
+            
+            <!-- Contact and Booking Section -->
+            <div class="action-section">
+                <div id="contactSection" class="contact-section">
+                    <h3>Contact Landlord</h3>
+                    <button id="whatsappBtn" class="whatsapp-btn" onclick="window.open('https://wa.me/250794559346?text=Hi!%20I%27m%20interested%20in%20your%20property', '_blank')">
+                        📱 Contact via WhatsApp
+                    </button>
+                    <p class="contact-info">Phone: <span id="landlordPhone"></span></p>
+                </div>
+                
+                <div id="bookingSection" class="booking-section">
+                    <h3>Book this Property</h3>
+                    <form id="bookingForm">
+                        <div class="form-group">
+                            <label for="moveInDate">Move-in Date:</label>
+                            <input type="date" id="moveInDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="duration">Duration (months):</label>
+                            <select id="duration" required>
+                                <option value="1">1 month</option>
+                                <option value="3">3 months</option>
+                                <option value="6">6 months</option>
+                                <option value="12">12 months</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tenantPhone">Your Phone Number:</label>
+                            <input type="tel" id="tenantPhone" placeholder="+250XXXXXXXXX" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Message to Landlord:</label>
+                            <textarea id="message" rows="3" placeholder="Optional message..."></textarea>
+                        </div>
+                        <button type="submit" class="book-btn">Book Property</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Map Section -->
+            <div class="map-section">
+                <h3>Property Location</h3>
+                <div id="mapContainer" class="map-container">
+                    <iframe id="mapFrame" width="100%" height="300" frameborder="0" style="border:0" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize EmailJS
+        emailjs.init('26vE2iCjIPkXczTKX');
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const propertyId = parseInt(urlParams.get('id'));
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+        if (currentUser) {
+            document.getElementById('userInfo').innerHTML = `
+                <span>Welcome, ${currentUser.firstName} ${currentUser.lastName}</span>
+                <button onclick="logout()" class="logout-btn">Logout</button>
+            `;
+        } else {
+            document.getElementById('userInfo').innerHTML = '<a href="login.html">Login</a>';
+            document.getElementById('bookingSection').style.display = 'none';
+        }
+
+        function loadPropertyDetails() {
+            const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+            const property = properties.find(p => p.id === propertyId);
+            
+            if (!property) {
+                document.getElementById('propertyDetails').innerHTML = '<p>Property not found</p>';
+                return;
+            }
+
+            const defaultImages = {
+                house: 'img/camden-paces-apartments-buckhead-ga-terraces-living-room-with-den_1.jpg',
+                apartment: 'img/istockphoto-454995843-612x612 (1).jpg',
+                studio: 'img/logan_apartments.6.jpg',
+                villa: 'img/og.jpg',
+                'single-room': 'img/winston-salem-apartment-complex_1200w.webp'
+            };
+            
+            const propertyImages = property.photos && property.photos.length > 0 ? property.photos : [defaultImages[property.type] || defaultImages.house];
+            
+            document.getElementById('propertyDetails').innerHTML = `
+                <div class="property-images">
+                    <div class="main-image">
+                        <img src="${propertyImages[0]}" alt="${property.title}" id="mainPropertyImage" onerror="this.src='${defaultImages.house}'">
+                    </div>
+                    ${propertyImages.length > 1 ? `
+                        <div class="image-thumbnails">
+                            ${propertyImages.map((img, index) => `
+                                <img src="${img}" alt="${property.title} ${index + 1}" 
+                                     onclick="changeMainImage('${img}')" 
+                                     class="thumbnail ${index === 0 ? 'active' : ''}" 
+                                     onerror="this.src='${defaultImages.house}'">
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="property-header">
+                    <h1>${property.title}</h1>
+                    <div class="property-price">${property.price.toLocaleString()} FRw/month</div>
+                </div>
+                <div class="property-info">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <strong>Type:</strong> ${(property.type || 'house').charAt(0).toUpperCase() + (property.type || 'house').slice(1)}
+                        </div>
+                        <div class="info-item">
+                            <strong>Location:</strong> ${property.location}
+                        </div>
+                        <div class="info-item">
+                            <strong>Bedrooms:</strong> ${property.bedrooms}
+                        </div>
+                        <div class="info-item">
+                            <strong>Bathrooms:</strong> ${property.bathrooms}
+                        </div>
+                        <div class="info-item">
+                            <strong>Furnished:</strong> ${property.furnished === 'yes' ? 'Yes' : 'No'}
+                        </div>
+                        <div class="info-item">
+                            <strong>Availability:</strong> ${property.availability || 'Available Now'}
+                        </div>
+                    </div>
+                    <div class="amenities-section">
+                        <h3>Amenities</h3>
+                        <div class="amenities-list">
+                            ${property.amenities ? property.amenities.map(amenity => `<span class="amenity-tag">${amenity}</span>`).join('') : '<span>No amenities listed</span>'}
+                        </div>
+                    </div>
+                    <div class="property-description">
+                        <h3>Description</h3>
+                        <p>${property.description || 'No description available'}</p>
+                    </div>
+                    <div class="property-status">
+                        <span class="status ${property.available ? 'available' : 'booked'}">
+                            ${property.available ? 'Available' : 'Not Available'}
+                        </span>
+                    </div>
+                </div>
+            `;
+            
+            // Setup WhatsApp contact
+            const phone = property.landlordPhone || '+250794559346';
+            document.getElementById('landlordPhone').textContent = phone;
+            document.getElementById('whatsappBtn').onclick = function() {
+                const message = encodeURIComponent(`Hi! I'm interested in your property: ${property.title}`);
+                window.open(`https://wa.me/${phone.replace('+', '')}?text=${message}`, '_blank');
+            };
+            
+            // Setup map
+            if (property.coordinates) {
+                const [lat, lng] = property.coordinates.split(',');
+                const mapSrc = `https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${lat},${lng}&zoom=15`;
+                document.getElementById('mapFrame').src = `https://www.google.com/maps?q=${lat},${lng}&output=embed`;
+            }
+
+            if (!property.available) {
+                document.getElementById('bookingSection').style.display = 'none';
+                document.getElementById('contactSection').style.display = 'none';
+            }
+        }
+
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!currentUser || currentUser.type !== 'tenant') {
+                alert('Please login as a tenant to book properties');
+                return;
+            }
+
+            const booking = {
+                id: Date.now(),
+                propertyId: propertyId,
+                tenantId: currentUser.id,
+                tenantPhone: document.getElementById('tenantPhone').value,
+                moveInDate: document.getElementById('moveInDate').value,
+                duration: parseInt(document.getElementById('duration').value),
+                message: document.getElementById('message').value,
+                status: 'pending',
+                dateBooked: new Date().toISOString()
+            };
+
+            const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+            bookings.push(booking);
+            localStorage.setItem('bookings', JSON.stringify(bookings));
+
+            // Send email notification
+            const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+            const property = properties.find(p => p.id === propertyId);
+            
+            emailjs.send('service_66mzlgv', 'template_gfgzvce', {
+                to_email: 'danecioussmallwood20@gmail.com',
+                tenant_name: `${currentUser.firstName} ${currentUser.lastName}`,
+                tenant_email: currentUser.email,
+                tenant_phone: booking.tenantPhone,
+                property_title: property.title,
+                property_location: property.location,
+                property_price: property.price,
+                move_in_date: booking.moveInDate,
+                duration: booking.duration,
+                message: booking.message || 'No message provided'
+            }).then(() => {
+                console.log('Email sent successfully');
+            }).catch((error) => {
+                console.error('Email failed:', error);
+            });
+
+            // Update property availability
+            const propertyIndex = properties.findIndex(p => p.id === propertyId);
+            if (propertyIndex !== -1) {
+                properties[propertyIndex].available = false;
+                localStorage.setItem('properties', JSON.stringify(properties));
+            }
+
+            alert('Booking request sent successfully!');
+            window.location.href = 'index.html';
+        });
+
+        function changeMainImage(imageSrc) {
+            document.getElementById('mainPropertyImage').src = imageSrc;
+            
+            // Update active thumbnail
+            document.querySelectorAll('.thumbnail').forEach(thumb => {
+                thumb.classList.remove('active');
+                if (thumb.src.includes(imageSrc.split('/').pop())) {
+                    thumb.classList.add('active');
+                }
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        }
+
+        loadPropertyDetails();
+    </script>
+</body>
+</html>

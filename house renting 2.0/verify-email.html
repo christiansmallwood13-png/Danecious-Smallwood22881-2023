@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - House Renting</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-form">
+            <h2>Verify Your Email</h2>
+            <p>Please enter the 4-digit OTP sent to your email address.</p>
+            <form id="verifyForm">
+                <div class="form-group">
+                    <label for="otp">Enter OTP:</label>
+                    <input type="text" id="otp" maxlength="4" pattern="[0-9]{4}" required>
+                </div>
+                <button type="submit" class="auth-btn">Verify Email</button>
+            </form>
+            <p><a href="register.html">Back to Registration</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('verifyForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const enteredOTP = document.getElementById('otp').value;
+            const storedOTP = localStorage.getItem('currentOTP');
+            const pendingUser = JSON.parse(localStorage.getItem('pendingUser') || 'null');
+            
+            if (!pendingUser || !storedOTP) {
+                alert('No pending registration found. Please register first.');
+                window.location.href = 'register.html';
+                return;
+            }
+            
+            if (enteredOTP === storedOTP) {
+                pendingUser.verified = true;
+                
+                const users = JSON.parse(localStorage.getItem('users') || '[]');
+                users.push(pendingUser);
+                localStorage.setItem('users', JSON.stringify(users));
+                
+                localStorage.removeItem('pendingUser');
+                localStorage.removeItem('currentOTP');
+                
+                alert('Email verified successfully! You can now login.');
+                window.location.href = 'login.html';
+            } else {
+                alert('Invalid OTP. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>

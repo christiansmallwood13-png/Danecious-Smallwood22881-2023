@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Void - Find Your Perfect Home</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="nav-container">
+      <span class="logo">⚫ VOID</span>
+      <div id="userNav"></div>
+    </div>
+  </div>
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <span>🏠 Home</span> / 
+    <span>Rwanda</span> /
+    <span>Houses</span>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Search by name, type, or location..." class="search-input">
+    <button onclick="searchProperties()" class="search-btn">🔍 Search</button>
+  </div>
+
+  <!-- Filters row -->
+  <div class="filters-row">
+    <button class="filter-btn" id="filterToggleBtn">☰ Filters</button>
+    <a href="filters.html" class="filter-btn" style="text-decoration: none; display: inline-block;">🔍 Advanced Filters</a>
+
+    <div class="filter-panel" id="filterPanel" style="display:none; margin-top: 10px;">
+      <form id="filterForm">
+        <div class="filter-group">
+          <label for="priceMin">Price Min:</label>
+          <input type="number" id="priceMin" name="priceMin" placeholder="Min Price" />
+        </div>
+        <div class="filter-group">
+          <label for="priceMax">Price Max:</label>
+          <input type="number" id="priceMax" name="priceMax" placeholder="Max Price" />
+        </div>
+        <div class="filter-group">
+          <label for="saleRent">Sale or Rent:</label>
+          <select id="saleRent" name="saleRent">
+            <option value="">Any</option>
+            <option value="sale">Sale</option>
+            <option value="rent">Rent</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="condition">Property Condition:</label>
+          <select id="condition" name="condition">
+            <option value="">Any</option>
+            <option value="new">New</option>
+            <option value="used">Used</option>
+            <option value="renovated">Renovated</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="bedrooms">Bedrooms:</label>
+          <select id="bedrooms" name="bedrooms">
+            <option value="">Any</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4+">4+</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="bathrooms">Bathrooms:</label>
+          <select id="bathrooms" name="bathrooms">
+            <option value="">Any</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4+">4+</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="furnished">Furnished:</label>
+          <select id="furnished" name="furnished">
+            <option value="">Any</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="location">Location:</label>
+          <input type="text" id="location" name="location" placeholder="Enter location" />
+        </div>
+
+        <div style="margin-top: 10px;">
+          <button type="submit" class="filter-btn">Apply Filters</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="right-controls">
+      <select class="sort-select" id="sortSelect">
+        <option value="">Sort by</option>
+        <option value="price-high">Price: High → Low</option>
+        <option value="price-low">Price: Low → High</option>
+      </select>
+
+      <div class="view-icons">
+        <span>🔲</span>
+        <span>📃</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Listings -->
+  <div class="listings-grid" id="listingsGrid"></div>
+
+</div>
+
+<script>
+  const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+  
+  // Update navigation
+  if (currentUser) {
+    document.getElementById('userNav').innerHTML = `
+      <span>Welcome, ${currentUser.firstName} ${currentUser.lastName}</span>
+      ${currentUser.type === 'landlord' ? '<a href="landlord-dashboard.html" class="nav-link">Dashboard</a>' : '<a href="booking-history.html" class="nav-link">My Bookings</a>'}
+      <button onclick="logout()" class="logout-btn">Logout</button>
+    `;
+  } else {
+    document.getElementById('userNav').innerHTML = `
+      <a href="login.html" class="nav-link">Login</a>
+      <a href="register.html" class="nav-link">Register</a>
+    `;
+  }
+
+  function loadProperties() {
+    const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+    const availableProperties = properties.filter(p => p.available);
+    displayProperties(availableProperties);
+  }
+
+  function viewProperty(id) {
+    window.location.href = `property-details.html?id=${id}`;
+  }
+
+  function saveProperty(id) {
+    if (!currentUser) {
+      alert('Please login to save properties');
+      return;
+    }
+    alert('Property saved to favorites!');
+  }
+
+  function logout() {
+    localStorage.removeItem('currentUser');
+    window.location.reload();
+  }
+
+  // Search functionality
+  function searchProperties() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+    
+    const filteredProperties = properties.filter(p => 
+      p.available && (
+        p.title.toLowerCase().includes(searchTerm) ||
+        p.type?.toLowerCase().includes(searchTerm) ||
+        p.location.toLowerCase().includes(searchTerm)
+      )
+    );
+    
+    displayProperties(filteredProperties);
+  }
+
+  function displayProperties(properties) {
+    const container = document.getElementById('listingsGrid');
+    
+    if (properties.length === 0) {
+      container.innerHTML = '<p class="no-properties">No properties found matching your search.</p>';
+      return;
+    }
+    
+    container.innerHTML = properties.map(property => {
+      const defaultImages = {
+        house: 'img/camden-paces-apartments-buckhead-ga-terraces-living-room-with-den_1.jpg',
+        apartment: 'img/istockphoto-454995843-612x612 (1).jpg',
+        studio: 'img/logan_apartments.6.jpg',
+        villa: 'img/og.jpg',
+        'single-room': 'img/winston-salem-apartment-complex_1200w.webp'
+      };
+      
+      const propertyImages = property.photos && property.photos.length > 0 ? property.photos : [defaultImages[property.type] || defaultImages.house];
+      const mainImage = propertyImages[0];
+      const imageCount = propertyImages.length;
+      
+      return `
+        <div class="listing-card" onclick="viewProperty(${property.id})">
+          <div class="img-box">
+            <img src="${mainImage}" alt="${property.title}" onerror="this.src='${defaultImages.house}'">
+            <span class="img-count">${imageCount}</span>
+          </div>
+          <h3 class="title">${property.title}</h3>
+          <div class="meta">
+            <span>🏠 ${(property.type || 'house').charAt(0).toUpperCase() + (property.type || 'house').slice(1)} - ${property.bedrooms} bed, ${property.bathrooms} bath</span>
+            <span>📍 ${property.location}</span>
+            <span>🪑 ${property.furnished === 'yes' ? 'Furnished' : 'Unfurnished'}</span>
+            <span>⏰ ${property.availability || 'Available Now'}</span>
+          </div>
+          <div class="price-save">
+            <h2 class="price" data-price="${property.price}">${property.price.toLocaleString()} FRw</h2>
+            <button class="save-btn" onclick="event.stopPropagation(); saveProperty(${property.id})">🔖</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Initialize sample data if none exists
+  if (!localStorage.getItem('properties')) {
+    const sampleProperties = [
+      {
+        id: 1,
+        landlordId: 1,
+        title: "Fully furnished house for rent",
+        type: "house",
+        price: 400000,
+        bedrooms: "3",
+        bathrooms: "2",
+        location: "Kigali",
+        furnished: "yes",
+        availability: "immediate",
+        amenities: ["WiFi", "Parking", "Garden", "Security"],
+        photos: ["img/camden-paces-apartments-buckhead-ga-terraces-living-room-with-den_1.jpg"],
+        landlordPhone: "+250794559346",
+        coordinates: "-1.9441,30.0619",
+        description: "Beautiful 3-bedroom house in a quiet neighborhood",
+        available: true,
+        dateAdded: new Date().toISOString()
+      },
+      {
+        id: 2,
+        landlordId: 1,
+        title: "Modern apartment in Remera",
+        type: "apartment",
+        price: 500000,
+        bedrooms: "2",
+        bathrooms: "2",
+        location: "Kigali, Remera",
+        furnished: "yes",
+        availability: "immediate",
+        amenities: ["WiFi", "Gym", "Pool", "Elevator"],
+        photos: ["img/istockphoto-454995843-612x612 (1).jpg", "img/istockphoto-454995843-612x612.jpg"],
+        landlordPhone: "+250794559346",
+        coordinates: "-1.9536,30.0909",
+        description: "Modern 2-bedroom apartment with great amenities",
+        available: true,
+        dateAdded: new Date().toISOString()
+      },
+      {
+        id: 3,
+        landlordId: 1,
+        title: "Cozy studio in Gasoro",
+        type: "studio",
+        price: 350000,
+        bedrooms: "1",
+        bathrooms: "1",
+        location: "Kigali, Gasoro",
+        furnished: "no",
+        availability: "coming soon",
+        amenities: ["WiFi", "Kitchen"],
+        photos: ["img/logan_apartments.6.jpg", "img/og.jpg"],
+        landlordPhone: "+250794559346",
+        coordinates: "-1.9706,30.1044",
+        description: "Affordable studio perfect for young professionals",
+        available: true,
+        dateAdded: new Date().toISOString()
+      }
+    ];
+    localStorage.setItem('properties', JSON.stringify(sampleProperties));
+  }
+
+  // Initialize sample landlord user if none exists
+  if (!localStorage.getItem('users')) {
+    const sampleUsers = [
+      {
+        id: 1,
+        firstName: "John",
+        lastName: "Doe",
+        email: "landlord@example.com",
+        password: "password123",
+        type: "landlord",
+        phone: "+250794559346",
+        verified: true
+      },
+      {
+        id: 2,
+        firstName: "Jane",
+        lastName: "Smith",
+        email: "tenant@example.com",
+        password: "password123",
+        type: "tenant",
+        phone: "",
+        verified: true
+      }
+    ];
+    localStorage.setItem('users', JSON.stringify(sampleUsers));
+  }
+
+  // Filter functionality
+  document.getElementById('filterForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    applyFilters();
+  });
+
+  function applyFilters() {
+    const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+    const filters = {
+      priceMin: parseInt(document.getElementById('priceMin').value) || 0,
+      priceMax: parseInt(document.getElementById('priceMax').value) || Infinity,
+      bedrooms: document.getElementById('bedrooms').value,
+      bathrooms: document.getElementById('bathrooms').value,
+      furnished: document.getElementById('furnished').value,
+      location: document.getElementById('location').value.toLowerCase()
+    };
+
+    const filtered = properties.filter(p => 
+      p.available &&
+      p.price >= filters.priceMin &&
+      p.price <= filters.priceMax &&
+      (!filters.bedrooms || p.bedrooms === filters.bedrooms) &&
+      (!filters.bathrooms || p.bathrooms === filters.bathrooms) &&
+      (!filters.furnished || p.furnished === filters.furnished) &&
+      (!filters.location || p.location.toLowerCase().includes(filters.location))
+    );
+
+    displayProperties(filtered);
+    document.getElementById('filterPanel').style.display = 'none';
+  }
+
+  // Filter toggle functionality
+  const filterToggleBtn = document.getElementById('filterToggleBtn');
+  const filterPanel = document.getElementById('filterPanel');
+
+  filterToggleBtn.addEventListener('click', function() {
+    if (filterPanel.style.display === 'none' || filterPanel.style.display === '') {
+      filterPanel.style.display = 'block';
+    } else {
+      filterPanel.style.display = 'none';
+    }
+  });
+
+  // Search on Enter key
+  document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      searchProperties();
+    }
+  });
+
+  // Sort functionality
+  const sortSelect = document.getElementById('sortSelect');
+  const listingsGrid = document.querySelector('.listings-grid');
+
+  sortSelect.addEventListener('change', function() {
+    const sortValue = this.value;
+    const cards = Array.from(listingsGrid.querySelectorAll('.listing-card'));
+    
+    if (sortValue === 'price-high' || sortValue === 'price-low') {
+      cards.sort((a, b) => {
+        const priceA = parseInt(a.querySelector('.price').dataset.price);
+        const priceB = parseInt(b.querySelector('.price').dataset.price);
+        return sortValue === 'price-high' ? priceB - priceA : priceA - priceB;
+      });
+      
+      cards.forEach(card => listingsGrid.appendChild(card));
+    }
+  });
+
+  loadProperties();
+</script>
+</body>
+</html>
+       

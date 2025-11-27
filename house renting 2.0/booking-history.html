@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings - House Renting</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="page">
+        <div class="top-bar">
+            <div class="nav-container">
+                <a href="index.html" class="back-btn">← Back to Home</a>
+                <span id="userInfo"></span>
+            </div>
+        </div>
+
+        <div class="dashboard-container">
+            <h1>My Booking History</h1>
+            
+            <!-- Notifications Section -->
+            <div class="notifications-section">
+                <h2>Notifications <span id="notificationBadge" class="notification-badge" style="display:none;"></span></h2>
+                <div id="notificationsList" class="notifications-list"></div>
+            </div>
+            
+            <div class="booking-filters">
+                <select id="statusFilter" onchange="filterBookings()">
+                    <option value="">All Bookings</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="active">Active</option>
+                    <option value="canceled">Canceled</option>
+                </select>
+            </div>
+
+            <div id="bookingsList" class="bookings-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser || currentUser.type !== 'tenant') {
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('userInfo').innerHTML = `
+            <span>Welcome, ${currentUser.firstName} ${currentUser.lastName}</span>
+            <button onclick="logout()" class="logout-btn">Logout</button>
+        `;
+
+        function loadBookings() {
+            const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+            const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+            const myBookings = bookings.filter(b => b.tenantId === currentUser.id);
+            
+            displayBookings(myBookings, properties);
+            loadNotifications();
+        }
+
+        function loadNotifications() {
+            const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+            const myNotifications = notifications.filter(n => n.userId === currentUser.id)
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            const container = document.getElementById('notificationsList');
+            const badge = document.getElementById('notificationBadge');
+            
+            const unreadCount = myNotifications.filter(n => !n.read).length;
+            
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+            
+            if (myNotifications.length === 0) {
+                container.innerHTML = '<p class="no-notifications">No notifications yet.</p>';
+                return;
+            }
+            
+            container.innerHTML = myNotifications.slice(0, 5).map(notification => `
+                <div class="notification-item ${notification.read ? 'read' : 'unread'} ${notification.type}" 
+                     onclick="markAsRead(${notification.id})">
+                    <div class="notification-message">${notification.message}</div>
+                    <div class="notification-time">${new Date(notification.timestamp).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+
+        function markAsRead(notificationId) {
+            const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+            const notificationIndex = notifications.findIndex(n => n.id === notificationId);
+            
+            if (notificationIndex !== -1) {
+                notifications[notificationIndex].read = true;
+                localStorage.setItem('notifications', JSON.stringify(notifications));
+                loadNotifications();
+            }
+        }
+
+        function displayBookings(bookings, properties) {
+            const container = document.getElementById('bookingsList');
+            
+            if (bookings.length === 0) {
+                container.innerHTML = '<p class="no-bookings">No bookings found.</p>';
+                return;
+            }
+            
+            container.innerHTML = bookings.map(booking => {
+                const property = properties.find(p => p.id === booking.propertyId);
+                const statusClass = booking.status.toLowerCase();
+                
+                return `
+                    <div class="booking-item">
+                        <div class="booking-header">
+                            <h3>${property ? property.title : 'Property Not Found'}</h3>
+                            <span class="booking-status ${statusClass}">${booking.status.toUpperCase()}</span>
+                        </div>
+                        <div class="booking-details">
+                            <p><strong>Property:</strong> ${property ? property.location : 'N/A'}</p>
+                            <p><strong>Move-in Date:</strong> ${new Date(booking.moveInDate).toLocaleDateString()}</p>
+                            <p><strong>Duration:</strong> ${booking.duration} months</p>
+                            <p><strong>Booking Date:</strong> ${new Date(booking.dateBooked).toLocaleDateString()}</p>
+                            ${booking.message ? `<p><strong>Message:</strong> ${booking.message}</p>` : ''}
+                        </div>
+                        <div class="booking-actions">
+                            ${booking.status === 'pending' ? `
+                                <button onclick="cancelBooking(${booking.id})" class="cancel-btn">Cancel Booking</button>
+                            ` : ''}
+                            ${property ? `
+                                <button onclick="viewProperty(${property.id})" class="view-btn">View Property</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterBookings() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+            const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+            
+            let myBookings = bookings.filter(b => b.tenantId === currentUser.id);
+            
+            if (statusFilter) {
+                myBookings = myBookings.filter(b => b.status === statusFilter);
+            }
+            
+            displayBookings(myBookings, properties);
+        }
+
+        function cancelBooking(bookingId) {
+            if (confirm('Are you sure you want to cancel this booking?')) {
+                const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+                const bookingIndex = bookings.findIndex(b => b.id === bookingId);
+                
+                if (bookingIndex !== -1) {
+                    bookings[bookingIndex].status = 'canceled';
+                    localStorage.setItem('bookings', JSON.stringify(bookings));
+                    
+                    // Make property available again
+                    const properties = JSON.parse(localStorage.getItem('properties') || '[]');
+                    const propertyIndex = properties.findIndex(p => p.id === bookings[bookingIndex].propertyId);
+                    if (propertyIndex !== -1) {
+                        properties[propertyIndex].available = true;
+                        localStorage.setItem('properties', JSON.stringify(properties));
+                    }
+                    
+                    loadBookings();
+                    alert('Booking canceled successfully!');
+                }
+            }
+        }
+
+        function viewProperty(propertyId) {
+            window.location.href = `property-details.html?id=${propertyId}`;
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        }
+
+        loadBookings();
+    </script>
+</body>
+</html>
